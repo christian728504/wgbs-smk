@@ -1,15 +1,20 @@
-.test*
-*results*
-.gemBS
-.bed
-.snakemake
-resources
+# Exclude
+
+test/
+results/
+workflow/
+resources/
 notebooks/
-workflow/envs/
-sstat.txt
-TESTING
-old_pipeline
+workflow/rules/envs/
+old_pipeline/
+.*/
+.parallel
+.gemBS
+.snakemake
 .cache
-workflow/rules/envs/*
-!workflow/rules/envs/gem-mapper.yml
 .nv
+
+# Exceptions
+
+!workflow/rules/envs/gem-mapper.yml
+

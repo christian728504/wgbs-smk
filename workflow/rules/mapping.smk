@@ -16,7 +16,7 @@ rule mapping:
         dataset=lambda w: dataset_lookup.get(w.barcode),
         barcode=lambda w: w.barcode,
         tmpdir=config['tmpdir']
-    container: "docker://clarity001/gembs:latest"
+    container: "docker://clarity001/wgbs-smk:latest"
     log: "results/logfiles/mapping/{barcode}.log"
     shell:
         """
@@ -39,7 +39,7 @@ rule mapping:
             -p \
             --report-file=$OUTPUT_DIR/$(basename {output.json}) \
             -r "@RG\tID:{params.dataset}\tSM:\tBC:{params.barcode}\tPU:{params.dataset}" | \
-        read_filter.py $OUTPUT_DIR/$(basename {input.chromsizes}) | \
+        python workflow/rules/scripts/read_filter.py $OUTPUT_DIR/$(basename {input.chromsizes}) | \
         samtools sort -o $OUTPUT_DIR/$(basename {output.bam}) \
             -T "$OUTPUT_DIR/sort" \
             --threads {resources.threads} \
@@ -51,7 +51,7 @@ rule mapping:
 
         echo "$(date): md5sum completed"
 
-        make_average_coverage.py \
+        python workflow/rules/scripts/make_average_coverage.py \
             --bamfile $OUTPUT_DIR/$(basename {output.bam}) \
             --chromsizes $OUTPUT_DIR/$(basename {input.chromsizes}) \
             --threads {resources.threads} \
@@ -67,5 +67,35 @@ rule mapping:
         rm -rf "$OUTPUT_DIR"
         
         echo "$(date): Rule finished"
+        touch {output.signal}
+        """
+
+rule get_coverage:
+    input:
+        signal="results/mapping/{barcode}/.continue",
+        chromsizes=rules.indexing.output.chromsizes,
+        bam="results/mapping/{barcode}/{barcode}.bam",
+    output:
+        signal="results/get_coverage/{barcode}/.continue",
+        coverage_bedgraphs=[
+            "results/get_coverage/{barcode}/{barcode}_coverage_neg.bg",
+            "results/get_coverage/{barcode}/{barcode}_coverage_pos.bg",
+        ],
+        coverage_bigwigs=[
+            "results/get_coverage/{barcode}/{barcode}_coverage_neg.bw",
+            "results/get_coverage/{barcode}/{barcode}_coverage_pos.bw",
+        ]
+    container: "docker://clarity001/wgbs-smk:latest"
+    log: "results/logfiles/get_coverage/{barcode}.log"
+    shell:
+        """
+        exec >> {log} 2>&1
+
+        echo "$(date --iso=seconds): Running bedtools genomecov"
+        parallel -j 2 bedtools genomecov -ibam {input.bam} -bg -strand {{1}} '>' {{2}} ::: - + :::+ {output.coverage_bedgraphs}
+
+        echo "$(date --iso=seconds): Running bedGraphToBigWig"
+        parallel -j 2 bedGraphToBigWig {{1}} {input.chromsizes} {{2}} ::: {output.coverage_bedgraphs} :::+ {output.coverage_bigwigs}
+
         touch {output.signal}
         """

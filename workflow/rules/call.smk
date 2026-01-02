@@ -7,7 +7,7 @@ rule generate_chrome_ctgs:
     params:
         barcode=lambda w: w.barcode,
         tmpdir=config['tmpdir']
-    container: "docker://clarity001/gembs:latest"
+    container: "docker://clarity001/wgbs-smk:latest"
     log: "results/logfiles/calls/{barcode}_ctgs.log"
     shell:
         """
@@ -51,7 +51,7 @@ rule calling:
         ref_bias=config['calling']['reference_bias'],
         mapq=config['calling']['mapq_threshold'],
         qual=config['calling']['qual_threshold']
-    container: "docker://clarity001/gembs:latest"
+    container: "docker://clarity001/wgbs-smk:latest"
     log: "results/logfiles/calls/{barcode}_{contig}.log"
     shell:
         """
@@ -101,7 +101,7 @@ rule merge_chroms:
         barcode=lambda w: w.barcode,
         tmpdir=config['tmpdir'],
         out_type=config['calling']['output_type']
-    container: "docker://clarity001/gembs:latest"
+    container: "docker://clarity001/wgbs-smk:latest"
     log: "results/logfiles/calls/{barcode}_merge.log"
     shell:
         """

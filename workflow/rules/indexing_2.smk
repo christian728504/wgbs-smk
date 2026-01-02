@@ -14,7 +14,7 @@ rule indexing:
         threads=8
         cores=4
         mem_mb=16000
-    container: "docker://clarity001/gembs:latest"
+    container: "docker://clarity001/wgbs-smk:latest"
     log: "results/logfiles/indexes.log"
     shell:
         """

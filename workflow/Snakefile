@@ -24,7 +24,8 @@ rule all:
     input:
         "results/indexes/.continue",
         expand(mapping_patterns, barcode=barcodes),
-        expand("results/get_methylc_and_coverage/{barcode}/.continue", barcode=barcodes),
+        expand("results/get_coverage/{barcode}/.continue", barcode=barcodes),
+        expand("results/get_methylc/{barcode}/.continue", barcode=barcodes),
         expand(chrom_ctg_bed_pattern, barcode=barcodes, contig=CONTIGS),
         expand(calling_patterns, barcode=barcodes, contig=CONTIGS),
         expand("results/calls/{barcode}/.continue", barcode=barcodes),

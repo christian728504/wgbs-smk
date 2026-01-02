@@ -25,7 +25,7 @@ rule gembs_extract:
         phred_threshold=f'--threshold {config['extract']['phred_threshold']}' if config['extract']['phred_threshold'] else '',
         mode='--mode strand-specific' if config['extract']['strand_specific'] else '',
         bw_mode='--bw-mode strand-specific' if config['extract']['bw_strand_specific'] else ''
-    container: "docker://clarity001/gembs:latest"
+    container: "docker://clarity001/wgbs-smk:latest"
     log: "results/logfiles/extract/{barcode}.log"
     shell:
         """
@@ -76,7 +76,7 @@ rule extract_signal:
             "results/extract_signal/{barcode}/{barcode}_chh_pos.bw",
             "results/extract_signal/{barcode}/{barcode}_chh_neg.bw",
         ]
-    container: "docker://clarity001/gembs:latest"
+    container: "docker://clarity001/wgbs-smk:latest"
     log: "results/logfiles/extract_signal/{barcode}.log"
     shell:
         """
@@ -90,7 +90,7 @@ rule extract_signal:
             --log-file {log}
         """
 
-rule get_methylc_and_coverage:
+rule get_methylc:
     input:
         signal="results/mapping/{barcode}/.continue",
         chh_bed_gz="results/extract/{barcode}/{barcode}_chh.bed.gz",
@@ -98,26 +98,22 @@ rule get_methylc_and_coverage:
         cpg_bed_gz="results/extract/{barcode}/{barcode}_cpg.bed.gz",
         chromsizes=rules.indexing.output.chromsizes
     output:
-        signal="results/get_methylc_and_coverage/{barcode}/.continue",
-        methylc_bed_gz="results/get_methylc_and_coverage/{barcode}/{barcode}_methylc.bed.gz",
-        coverage_bigwigs=[
-            "results/get_methylc_and_coverage/{barcode}/{barcode}_coverage_neg.bw",
-            "results/get_methylc_and_coverage/{barcode}/{barcode}_coverage_pos.bw",
-        ]
-    container: "docker://clarity001/gembs:latest"
-    log: "results/logfiles/get_methylc_and_coverage/{barcode}.log"
+        signal="results/get_methylc/{barcode}/.continue",
+        methylc_bed_gz="results/get_methylc/{barcode}/{barcode}_methylc.bed.gz",
+    container: "docker://clarity001/wgbs-smk:latest"
+    log: "results/logfiles/get_methylc/{barcode}.log"
     shell:
         """
         exec >> {log} 2>&1
 
-        python workflow/rules/scripts/get_methylc_and_coverage.py \
+        python workflow/rules/scripts/get_methylc.py \
             --barcode {wildcards.barcode} \
             --chh {input.chh_bed_gz} \
             --chg {input.chg_bed_gz} \
             --cpg {input.cpg_bed_gz} \
             --chromsizes {input.chromsizes} \
             --threads {resources.threads} \
-            --outdir results/get_methylc_and_coverage/{wildcards.barcode} \
+            --outdir results/get_methylc/{wildcards.barcode} \
 
         touch {output.signal}
         """

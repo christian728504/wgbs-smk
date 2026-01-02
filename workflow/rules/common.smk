@@ -9,7 +9,7 @@ if not os.path.exists("results/logfiles"):
     os.makedirs("results/logfiles")
 
 tmpdir = config["tmpdir"]
-METADATA = pl.read_csv(config["metadata"])
+METADATA = pl.read_csv(config["metadata"], separator="\t", comment_prefix="#")
 
 barcodes = METADATA["Barcode"].to_list()
 datasets = METADATA["Dataset"].to_list()

@@ -17,7 +17,7 @@ rule mapping:
         dataset=lambda w: dataset_lookup.get(w.barcode),
         barcode=lambda w: w.barcode,
         tmpdir=config['tmpdir']
-    container: "docker://clarity001/gembs:latest"
+    container: "docker://clarity001/wgbs-smk:latest"
     log: "results/logfiles/mapping/{barcode}.log"
     shell:
         """

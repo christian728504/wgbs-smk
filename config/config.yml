@@ -1,6 +1,6 @@
 # Pipeline configuration
-workdir: "/zata/zippy/ramirezc/gembs-smk" # Required
-metadata: ".test3/gembs_metadata.csv" # Required
+workdir: "/data/zusers/ramirezc/wgbs-smk" # Required
+metadata: ".2025-12-29/metadata.tsv" # Required
 reference: "resources/GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta.gz" # Required if make_index = True # Allow for gzip or non gzipped
 assembly: "GRCh38" # Optional
 species: "Homo_sapiens" # Optional (Assert no whitespace)
@@ -8,7 +8,6 @@ project: "MOHD"
 tmpdir: "/tmp" # Required
 make_index: True # Required
 indexes_tar: "https://users.wenglab.org/ramirezc/indexes.tar.lz4" # Optional
-# extra_references: "" # Optional
 
 index:
   sampling_rate: 4

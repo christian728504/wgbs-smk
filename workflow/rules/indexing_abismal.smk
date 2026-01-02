@@ -14,7 +14,7 @@ rule indexing:
         species=lambda w: f"-s {config.get('species')}" if config.get('species') else '',
         sampling_rate=config['index']['sampling_rate'],
         tmpdir=config['tmpdir']
-    container: "docker://clarity001/gembs:latest"
+    container: "docker://clarity001/wgbs-smk:latest"
     log: "results/logfiles/indexes.log"
     shell:
         """

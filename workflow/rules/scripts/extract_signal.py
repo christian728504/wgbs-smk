@@ -38,7 +38,7 @@ def process_bed_to_bigwig(bed_gz_path, chromsizes_path, output_bw_path, strand, 
         logger.info(f"Processing {bed_gz_path} for strand {strand} -> {output_bw_path}")
        
         bed_schema = {
-            "chr": pl.Utf8,                    # Contig or chromosome name
+            "chr": pl.Utf8,                      # Contig or chromosome name
             "start": pl.UInt32,                  # Start position (0 offset)
             "end": pl.UInt32,                    # End position (1 offset)
             "name": pl.Utf8,                     # Name of item
