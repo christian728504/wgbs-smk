@@ -1,8 +1,5 @@
 ---
-title: |
-+-------------------------------------------------------
-| Whole Genome Bisulfite Sequencing Snakemake Pipeline |
-+-------------------------------------------------------
+title: Whole Genome Bisulfite Sequencing Snakemake Pipeline
 author: Christian Samuel Ramirez
 ---
 

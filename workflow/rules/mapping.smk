@@ -13,8 +13,8 @@ rule mapping:
         json="results/mapping/{barcode}/{barcode}.json",
         signal="results/mapping/{barcode}/.continue"
     params:
-        dataset=lambda w: dataset_lookup.get(w.barcode),
-        barcode=lambda w: w.barcode,
+        dataset=lambda w: dataset_lookup.get(w.barcode).strip(),
+        barcode=lambda w: w.barcode.strip(),
         tmpdir=config['tmpdir']
     container: "docker://clarity001/wgbs-smk:latest"
     log: "results/logfiles/mapping/{barcode}.log"
@@ -77,10 +77,7 @@ rule get_coverage:
         bam="results/mapping/{barcode}/{barcode}.bam",
     output:
         signal="results/get_coverage/{barcode}/.continue",
-        coverage_bedgraphs=[
-            "results/get_coverage/{barcode}/{barcode}_coverage_neg.bg",
-            "results/get_coverage/{barcode}/{barcode}_coverage_pos.bg",
-        ],
+        coverage_bedgraphs=[ "results/get_coverage/{barcode}/{barcode}_coverage_neg.bg", "results/get_coverage/{barcode}/{barcode}_coverage_pos.bg", ],
         coverage_bigwigs=[
             "results/get_coverage/{barcode}/{barcode}_coverage_neg.bw",
             "results/get_coverage/{barcode}/{barcode}_coverage_pos.bw",

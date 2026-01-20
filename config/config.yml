@@ -1,6 +1,6 @@
 # Pipeline configuration
 workdir: "/data/zusers/ramirezc/wgbs-smk" # Required
-metadata: ".2025-12-29/metadata.tsv" # Required
+metadata: "jobs/2026-01-17.failed/metadata.local.tsv" # Required
 reference: "resources/GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta.gz" # Required if make_index = True # Allow for gzip or non gzipped
 assembly: "GRCh38" # Optional
 species: "Homo_sapiens" # Optional (Assert no whitespace)

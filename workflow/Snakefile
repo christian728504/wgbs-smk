@@ -32,4 +32,3 @@ rule all:
         expand("results/extract/{barcode}/.continue", barcode=barcodes),
         expand("results/extract_signal/{barcode}/.continue", barcode=barcodes),
         expand("results/{experiment}_pearson_correlation_qc.csv", experiment=experiments)
-        

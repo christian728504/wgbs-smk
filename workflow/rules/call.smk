@@ -17,7 +17,7 @@ rule generate_chrome_ctgs:
         mkdir -p "$OUTPUT_DIR"
         cp {input.chromsizes} $OUTPUT_DIR
 
-        make_ctg_beds.py \
+        python workflow/rules/scripts/make_ctg_beds.py \
             --chromsizes $OUTPUT_DIR/$(basename {input.chromsizes}) \
             --output_dir $OUTPUT_DIR \
             --barcode {params.barcode}

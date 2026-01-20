@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # Adapted from  https://github.com/ENCODE-DCC/wgbs-pipeline/blob/dev/wgbs_pipeline/calculate_average_coverage.py
 """
 Calculates average coverage from a bam file. The formula for this is given by this:

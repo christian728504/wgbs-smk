@@ -4,9 +4,9 @@ jobs: unlimited
 set-resources:
   indexing:
     runtime: 720
-    slurm_partition: "12hours"
+    slurm_partition: 12hours
     constraint: cascadelake
-    slurm_extra: "--exclude=z[1071,1024] --cpu-freq=High-High:Performance"
+    slurm_extra: "--exclude=z[1024,1062] --cpu-freq=High-High:Performance"
     threads: 52
     cpus_per_task: 52
     mem_mb: 500000
@@ -16,7 +16,7 @@ set-resources:
     cpus_per_task: 26
     slurm_partition: 5days
     constraint: cascadelake
-    slurm_extra: "--exclude=z[1071,1024] --cpu-freq=High-High:Performance"
+    slurm_extra: "--exclude=z[1024,1062] --cpu-freq=High-High:Performance"
     mem_mb: 250000
   get_coverage:
     runtime: 240
@@ -24,7 +24,7 @@ set-resources:
     cpus_per_task: 13
     slurm_partition: 4hours
     constraint: cascadelake
-    slurm_extra: "--exclude=z[1071,1024] --cpu-freq=High-High:Performance"
+    slurm_extra: "--exclude=z[1024,1062] --cpu-freq=High-High:Performance"
     mem_mb: 125000
   generate_chrome_ctgs:
     runtime: 240
@@ -32,7 +32,7 @@ set-resources:
     cpus_per_task: 13
     slurm_partition: 4hours
     constraint: cascadelake
-    slurm_extra: "--exclude=z[1071,1024] --cpu-freq=High-High:Performance"
+    slurm_extra: "--exclude=z[1024,1062] --cpu-freq=High-High:Performance"
     mem_mb: 125000
   calling:
     runtime: 240
@@ -40,7 +40,7 @@ set-resources:
     cpus_per_task: 26
     slurm_partition: 4hours
     constraint: cascadelake
-    slurm_extra: "--exclude=z[1071,1024] --cpu-freq=High-High:Performance"
+    slurm_extra: "--exclude=z[1024,1062] --cpu-freq=High-High:Performance"
     mem_mb: 250000
   merge_chroms:
     runtime: 240
@@ -48,7 +48,7 @@ set-resources:
     cpus_per_task: 26
     slurm_partition: 4hours
     constraint: cascadelake
-    slurm_extra: "--exclude=z[1071,1024] --cpu-freq=High-High:Performance"
+    slurm_extra: "--exclude=z[1024,1062] --cpu-freq=High-High:Performance"
     mem_mb: 250000
   gembs_extract:
     runtime: 720
@@ -56,7 +56,7 @@ set-resources:
     cpus_per_task: 26
     slurm_partition: 12hours
     constraint: cascadelake
-    slurm_extra: "--exclude=z[1071,1024] --cpu-freq=High-High:Performance"
+    slurm_extra: "--exclude=z[1024,1062] --cpu-freq=High-High:Performance"
     mem_mb: 250000
   extract_signal:
     runtime: 240
@@ -64,7 +64,7 @@ set-resources:
     cpus_per_task: 6
     slurm_partition: 4hours
     constraint: cascadelake
-    slurm_extra: "--exclude=z[1071,1024] --cpu-freq=High-High:Performance"
+    slurm_extra: "--exclude=z[1024,1062] --cpu-freq=High-High:Performance"
     mem_mb: 500000
   get_methylc:
     runtime: 240
@@ -72,25 +72,25 @@ set-resources:
     cpus_per_task: 26
     slurm_partition: 4hours
     constraint: cascadelake
-    slurm_extra: "--exclude=z[1071,1024] --cpu-freq=High-High:Performance"
+    slurm_extra: "--exclude=z[1024,1062] --cpu-freq=High-High:Performance"
     mem_mb: 500000
   make_bedmethyl_pearson_correlation:
-    runtime: 240
-    threads: 12
-    cpus_per_task: 13
-    slurm_partition: 4hours
+    runtime: 720
+    threads: 52
+    cpus_per_task: 52
+    slurm_partition: 12hours
     constraint: cascadelake
-    slurm_extra: "--exclude=z[1071,1024] --cpu-freq=High-High:Performance"
-    mem_mb: 125000
+    slurm_extra: "--exclude=z[1024,1062] --cpu-freq=High-High:Performance"
+    mem_mb: 500000
 
 use-apptainer: True
 apptainer-prefix: workflow/rules/envs
 software-deployment-method: apptainer
 apptainer-args: -B /data
 
-rerun-incomplete: True
-# keep-incomplete: True
-# max-jobs-per-timespan: 1/1s
-printshellcmds: True
 retries: 3
-
+slurm-requeue: False # Prevent jobs from being requeued, otherwise held infinitely
+rerun-incomplete: True
+keep-going: True
+printshellcmds: True
+# keep-incomplete: True
