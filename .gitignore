@@ -1,18 +1,19 @@
 # User-defined
+.nv
 test/
 jobs/
+.gemBS
+.cache
 results*/
+.parallel
+.snakemake
 resources/
 notebooks/
-workflow/rules/envs/
 old_pipeline/
-.*/
-.parallel
-.gemBS
-.snakemake
-.cache
-.nv
+workflow/rules/envs/
+workflow/rules/indexing_2.smk
 !workflow/rules/envs/gem-mapper.yml
+workflow/rules/make_bedmethyl_pearson_correlation.smk
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

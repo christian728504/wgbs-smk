@@ -2,8 +2,9 @@ import polars as pl
 import os
 
 wildcard_constraints:
+    part=r"\d{3}",
     barcode="[A-Za-z0-9]+",
-    contig="(chr[0-9XY]+|Pool)"
+    contig="(chr[0-9XY]+|Pool)",
 
 if not os.path.exists("results/logfiles"):
     os.makedirs("results/logfiles")
@@ -11,19 +12,22 @@ if not os.path.exists("results/logfiles"):
 tmpdir = config["tmpdir"]
 METADATA = pl.read_csv(config["metadata"], separator="\t", comment_prefix="#")
 
-barcodes = METADATA["Barcode"].to_list()
+BARCODES = METADATA["Barcode"].to_list()
 datasets = METADATA["Dataset"].to_list()
 
-experiments = METADATA.select("Dataset").with_columns(
+EXPERIMENTS = METADATA.select("Dataset").with_columns(
     pl.col("Dataset").str.split("_").list.get(0).alias("Experiment")
 )["Experiment"].unique().to_list()
 
 read_1_files = METADATA["File1"].to_list()
 read_2_files = METADATA["File2"].to_list()
 CONTIGS = [f"chr{i}" for i in range(1, 23)] + ["chrX", "chrY", "Pool"]
+split_start, split_end = 1, 1+config["fastq_split"]
+split_int = range(split_start, split_end)
+SPLIT = [f"{part:03d}" for part in split_int]
 
-dataset_lookup = dict(zip(barcodes, datasets))
-READ_LOOKUP = dict(zip(barcodes, zip(read_1_files, read_2_files)))
+dataset_lookup = dict(zip(BARCODES, datasets))
+READ_LOOKUP = dict(zip(BARCODES, zip(read_1_files, read_2_files)))
 
 def get_r1(wildcards):
     r1 = READ_LOOKUP.get(wildcards.barcode)[0]
@@ -34,10 +38,20 @@ def get_r2(wildcards):
     return r2
 
 mapping_patterns = [
+    "results/mapping/{barcode}/{barcode}.{part}.bam",
+    "results/mapping/{barcode}/{barcode}.{part}.json",
+    "results/mapping/{barcode}/.{part}.continue"
+]
+
+merge_patterns = [
     "results/mapping/{barcode}/{barcode}.bam",
-    "results/mapping/{barcode}/{barcode}.bam.md5", 
-    "results/mapping/{barcode}/{barcode}.json",
-    "results/mapping/{barcode}/.continue"
+]
+
+postprocess_patterns = [
+    "results/postprocess/{barcode}/{barcode}.bam",
+    "results/postprocess/{barcode}/{barcode}.bam.csi",
+    "results/postprocess/{barcode}/{barcode}.bam.md5",
+    "results/postprocess/{barcode}/.continue",
 ]
 
 chrom_ctg_bed_pattern = "results/calls/{barcode}/{barcode}_{contig}_ctgs.bed"

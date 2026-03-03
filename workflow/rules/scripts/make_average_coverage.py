@@ -61,7 +61,7 @@ def main():
     parser.add_argument('--bamfile', help='Path to bam file')
     parser.add_argument('--chromsizes', help="Path to chromsizes file")
     parser.add_argument('--threads', help='Number of threads (samtools flagstat)')
-    parser.add_argument('--gem_mapper_json', help='Where to output metrics')
+    parser.add_argument('--gem_mapper_jsons', nargs="+", help='List of input JSON files from gem3-mapper')
     args = parser.parse_args()
     
     samtools_stats = get_samtools_stats(args.bamfile, args.threads)
@@ -75,13 +75,16 @@ def main():
         [("samtools_stats", samtools_stats), ("average_coverage", average_coverage)]
     )
     
-    with open(args.gem_mapper_json, "r") as f:
-        existing_data = json.load(f, object_pairs_hook=OrderedDict)
+    existing_data = OrderedDict()
+    for json_file in args.gem_mapper_jsons:
+        with open(json_file) as f:
+            existing_data.update({json_file: json.load(f, object_pairs_hook=OrderedDict)})
     
     existing_data.update(qc_record.to_ordered_dict())
     
-    with open(args.gem_mapper_json, "w") as f:
-        json.dump(existing_data, f, indent=2)
+    json_path = Path(args.bamfile).parent / Path(args.bamfile).name
+    with json_path.with_suffix(".json").open("w") as f:
+        json.dump(existing_data, f, indent=4)
 
 if __name__ == "__main__":
     main()

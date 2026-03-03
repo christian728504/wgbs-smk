@@ -1,28 +1,16 @@
-# TODO: Finish developing this rule. Should take user defined reference_fasta as input (NOT COMPRESSED).
-# Then run gem-indexer on it
-
 rule indexing:
     input:
         fasta=config['reference']
     output:
-        gem_index="results/indexes/reference.gem",
         fasta="results/indexes/reference.fasta",
         fasta_fai="results/indexes/reference.fasta.fai",
         chromsizes="results/indexes/chromsizes.tsv",
         sam_dict="results/indexes/sam_dict.tsv",
         indexes=directory("results/indexes"),
         signal="results/indexes/.continue"
-    resources:
-        runtime=720,
-        slurm_partition="12hours",
-        slurm_extra="--constraint=cascadelake --cpu-freq=High-High:Performance",
-        threads=52,
-        cpus_per_task=52,
-        mem_mb=500000
     params:
         assembly=lambda w: f"-a {config.get('assembly')}" if config.get('assembly') else '',
         species=lambda w: f"-s {config.get('species')}" if config.get('species') else '',
-        sampling_rate=config['index']['sampling_rate'],
         tmpdir=config['tmpdir']
     container: "docker://clarity001/wgbs-smk:latest"
     log: "results/logfiles/indexes.log"
@@ -48,16 +36,6 @@ rule indexing:
             {params.assembly} \
             {params.species} \
             $OUTPUT_DIR/$(basename {output.fasta})
-        
-        GEM_OUTPUT=$(basename {output.gem_index})
-        cd "$OUTPUT_DIR"
-        gem-indexer \
-            -i $(basename {output.fasta}) \
-            -o ${{GEM_OUTPUT%.*}} \
-            --bisulfite-index \
-            --text-sampling-rate {params.sampling_rate} \
-            --threads {resources.threads}
-        cd -
 
         cp -t {output.indexes} "$OUTPUT_DIR"/* 
         rm -rf "$OUTPUT_DIR"
@@ -65,3 +43,31 @@ rule indexing:
         echo "Done!"
         touch {output.signal}
         """
+
+rule gem_indexer:
+    input:
+        fasta=rules.indexing.output.fasta,
+    output:
+        gem_index="results/indexes/reference.gem",
+        signal="results/indexes/gem_indexer.continue",
+    params:
+        sampling_rate=config['index']['sampling_rate'],
+    shadow: "copy-minimal"
+    container: "docker://clarity001/gem3-mapper:latest"
+    log: os.path.join(workflow.basedir, "results/logfiles/gem_indexer.log") # must be abspath
+    shell:
+        """
+        exec >> {log} 2>&1
+
+        gem-indexer \
+            -i {input.fasta} \
+            -o $(dirname {output.gem_index})/reference \
+            --bisulfite-index \
+            --text-sampling-rate {params.sampling_rate} \
+            --threads {resources.threads}
+
+        echo "Done!"
+        touch {output.signal}
+        """
+
+

@@ -1,12 +1,7 @@
 configfile: "config/config.yml"
 workdir: config["workdir"]
 
-if config["make_index"] == True:
-    include: "rules/indexing_1.smk"
-else:
-    include: "rules/indexing_2.smk"
-    localrules: indexing
-
+include: "rules/indexing.smk"
 include: "rules/common.smk"
 include: "rules/mapping.smk"
 include: "rules/call.smk"
@@ -23,12 +18,16 @@ onerror:
 rule all:
     input:
         "results/indexes/.continue",
-        expand(mapping_patterns, barcode=barcodes),
-        expand("results/get_coverage/{barcode}/.continue", barcode=barcodes),
-        expand("results/get_methylc/{barcode}/.continue", barcode=barcodes),
-        expand(chrom_ctg_bed_pattern, barcode=barcodes, contig=CONTIGS),
-        expand(calling_patterns, barcode=barcodes, contig=CONTIGS),
-        expand("results/calls/{barcode}/.continue", barcode=barcodes),
-        expand("results/extract/{barcode}/.continue", barcode=barcodes),
-        expand("results/extract_signal/{barcode}/.continue", barcode=barcodes),
-        expand("results/{experiment}_pearson_correlation_qc.csv", experiment=experiments)
+        "results/indexes/gem_indexer.continue",
+        expand("results/split/{barcode}/.continue", barcode=BARCODES),
+        expand(mapping_patterns, barcode=BARCODES, part=SPLIT),
+        expand(merge_patterns, barcode=BARCODES),
+        expand(postprocess_patterns, barcode=BARCODES),
+        expand("results/get_coverage/{barcode}/.continue", barcode=BARCODES),
+        expand("results/get_methylc/{barcode}/.continue", barcode=BARCODES),
+        expand(chrom_ctg_bed_pattern, barcode=BARCODES, contig=CONTIGS),
+        expand(calling_patterns, barcode=BARCODES, contig=CONTIGS),
+        expand("results/calls/{barcode}/.continue", barcode=BARCODES),
+        expand("results/extract/{barcode}/.continue", barcode=BARCODES),
+        expand("results/extract_signal/{barcode}/.continue", barcode=BARCODES),
+        # expand("results/{experiment}_pearson_correlation_qc.csv", experiment=EXPERIMENTS)

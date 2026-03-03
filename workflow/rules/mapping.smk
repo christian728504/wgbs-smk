@@ -1,80 +1,130 @@
-rule mapping:
+rule split:
     input:
-        signal="results/indexes/.continue",
-        gem_index=rules.indexing.output.gem_index,
-        chromsizes=rules.indexing.output.chromsizes,
         r1=get_r1,
-        r2=get_r2
+        r2=get_r2,
     output:
-        mapping=directory("results/mapping/{barcode}"),
-        bam="results/mapping/{barcode}/{barcode}.bam",
-        bam_csi="results/mapping/{barcode}/{barcode}.bam.csi",
-        md5="results/mapping/{barcode}/{barcode}.bam.md5",
-        json="results/mapping/{barcode}/{barcode}.json",
-        signal="results/mapping/{barcode}/.continue"
-    params:
-        dataset=lambda w: dataset_lookup.get(w.barcode).strip(),
-        barcode=lambda w: w.barcode.strip(),
-        tmpdir=config['tmpdir']
+        dir=directory("results/split/{barcode}"),
+        fastqs=expand(
+            "results/split/{{barcode}}/MOHD_{{barcode}}_{read}.part_{part}.fastq.gz",
+            part=SPLIT,
+            read=["R1", "R2"],
+        ),
+        signal="results/split/{barcode}/.continue",
     container: "docker://clarity001/wgbs-smk:latest"
-    log: "results/logfiles/mapping/{barcode}.log"
+    log: os.path.join(workflow.basedir, "results/logfiles/mapping/{barcode}.log")
     shell:
         """
         exec >> {log} 2>&1
 
         echo "$(date): Rule started"
-
-        OUTPUT_DIR={params.tmpdir}/{output.mapping}
+  
+        seqkit split2 -1 {input.r1} -2 {input.r2} -O {output.dir} -p 2 -j {resources.threads} -f
         
-        mkdir -p "$OUTPUT_DIR"
-        cp {input.gem_index} {input.chromsizes} {input.r1} {input.r2} $OUTPUT_DIR
+        echo "$(date): Rule finished"
+        touch {output.signal}
+        """
 
-        echo "$(date): Copied files to /tmp"
+rule mapping:
+    input:
+        gem_index=rules.gem_indexer.output.gem_index,
+        r1="results/split/{barcode}/MOHD_{barcode}_R1.part_{part}.fastq.gz",
+        r2="results/split/{barcode}/MOHD_{barcode}_R2.part_{part}.fastq.gz",
+    output:
+        bam="results/mapping/{barcode}/{barcode}.{part}.bam",
+        json="results/mapping/{barcode}/{barcode}.{part}.json",
+        signal="results/mapping/{barcode}/.{part}.continue",
+    params:
+        dataset=lambda w: dataset_lookup.get(w.barcode).strip(),
+        barcode=lambda w: w.barcode.strip(),
+    container: "docker://clarity001/wgbs-smk:latest"
+    log: os.path.join(workflow.basedir, "results/logfiles/mapping/{barcode}.{part}.log")
+    shell:
+        """
+        exec >> {log} 2>&1
+        echo "$(date): Rule started"
 
         gem-mapper \
             -t {resources.threads} \
-            -I $OUTPUT_DIR/$(basename {input.gem_index}) \
-            -1 $OUTPUT_DIR/$(basename {input.r1}) \
-            -2 $OUTPUT_DIR/$(basename {input.r2}) \
+            -I {input.gem_index} \
+            -1 {input.r1} \
+            -2 {input.r2} \
             -p \
-            --report-file=$OUTPUT_DIR/$(basename {output.json}) \
-            -r "@RG\tID:{params.dataset}\tSM:\tBC:{params.barcode}\tPU:{params.dataset}" | \
-        python workflow/rules/scripts/read_filter.py $OUTPUT_DIR/$(basename {input.chromsizes}) | \
-        samtools sort -o $OUTPUT_DIR/$(basename {output.bam}) \
-            -T "$OUTPUT_DIR/sort" \
+            --report-file={output.json} \
+            -r "@RG\tID:{params.dataset}\tSM:\tBC:{params.barcode}\tPU:{params.dataset}" > {output.bam}
+        
+        echo "$(date): Rule finished"
+        touch {output.signal}
+        """
+
+rule merge:
+    input:
+        bams=expand(
+            "results/mapping/{{barcode}}/{{barcode}}.{part}.bam",
+            part=SPLIT,
+        )
+    output:
+        bam="results/mapping/{barcode}/{barcode}.bam",
+    container: "docker://clarity001/wgbs-smk:latest"
+    log: os.path.join(workflow.basedir, "results/logfiles/merge/{barcode}.log")
+    shell:
+        """
+        exec >> {log} 2>&1
+        echo "$(date): Rule started"
+
+        samtools merge \
+            -@ {resources.threads} \
+            {output.bam} \
+            {input.bams} 
+
+        echo "$(date): Rule finished"
+        """
+
+rule postprocess:
+    input:
+        bam=rules.merge.output.bam,
+        jsons=expand(
+            "results/mapping/{{barcode}}/{{barcode}}.{part}.json",
+            part=SPLIT,
+        ),
+        chromsizes=rules.indexing.output.chromsizes,
+    output:
+        bam="results/postprocess/{barcode}/{barcode}.bam",
+        bam_csi="results/postprocess/{barcode}/{barcode}.bam.csi",
+        md5="results/postprocess/{barcode}/{barcode}.bam.md5",
+        signal="results/postprocess/{barcode}/.continue",
+    container: "docker://clarity001/wgbs-smk:latest"
+    log: "results/logfiles/postprocess/{barcode}.log"
+    shell:
+        """
+        exec >> {log} 2>&1
+        echo "$(date): Rule started"
+        
+        python workflow/rules/scripts/read_filter.py -i {input.bam} {input.chromsizes} | \
+        samtools sort -o {output.bam} \
+            -T /tmp/{wildcards.barcode} \
             --threads {resources.threads} \
             --write-index -
-        
         echo "$(date): gem-mapper completed"
         
-        md5sum $OUTPUT_DIR/$(basename {output.bam}) > $OUTPUT_DIR/$(basename {output.md5})
-
+        md5sum {output.bam} > {output.md5}
         echo "$(date): md5sum completed"
 
         python workflow/rules/scripts/make_average_coverage.py \
-            --bamfile $OUTPUT_DIR/$(basename {output.bam}) \
-            --chromsizes $OUTPUT_DIR/$(basename {input.chromsizes}) \
+            --bamfile {output.bam} \
+            --chromsizes {input.chromsizes} \
             --threads {resources.threads} \
-            --gem_mapper_json $OUTPUT_DIR/$(basename {output.json})
-
+            --gem_mapper_jsons {input.jsons}
         echo "$(date): average coverage completed"
 
-        rm -rf $OUTPUT_DIR/$(basename {input.r1}) \
-                $OUTPUT_DIR/$(basename {input.r2}) \
-                $OUTPUT_DIR/$(basename {input.gem_index}) \
-                $OUTPUT_DIR/$(basename {input.chromsizes})
-        cp -t {output.mapping} "$OUTPUT_DIR"/* 
-        rm -rf "$OUTPUT_DIR"
-        
         echo "$(date): Rule finished"
         touch {output.signal}
         """
 
 rule get_coverage:
     input:
-        signal="results/mapping/{barcode}/.continue",
+        bam=rules.postprocess.output.bam,
         chromsizes=rules.indexing.output.chromsizes,
-        bam="results/mapping/{barcode}/{barcode}.bam",
+        signal=rules.postprocess.output.signal,
     output:
         signal="results/get_coverage/{barcode}/.continue",
         coverage_bedgraphs=[ "results/get_coverage/{barcode}/{barcode}_coverage_neg.bg", "results/get_coverage/{barcode}/{barcode}_coverage_pos.bg", ],
@@ -87,6 +137,7 @@ rule get_coverage:
     shell:
         """
         exec >> {log} 2>&1
+        echo "$(date): Rule started"
 
         echo "$(date --iso=seconds): Running bedtools genomecov"
         parallel -j 2 bedtools genomecov -ibam {input.bam} -bg -strand {{1}} '>' {{2}} ::: - + :::+ {output.coverage_bedgraphs}
@@ -94,5 +145,6 @@ rule get_coverage:
         echo "$(date --iso=seconds): Running bedGraphToBigWig"
         parallel -j 2 bedGraphToBigWig {{1}} {input.chromsizes} {{2}} ::: {output.coverage_bedgraphs} :::+ {output.coverage_bigwigs}
 
+        echo "$(date): Rule finished"
         touch {output.signal}
         """

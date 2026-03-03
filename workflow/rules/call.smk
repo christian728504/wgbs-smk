@@ -31,8 +31,8 @@ rule generate_chrome_ctgs:
 
 rule calling:
     input:
-        bam="results/mapping/{barcode}/{barcode}.bam",
-        bam_csi="results/mapping/{barcode}/{barcode}.bam.csi",
+        bam=rules.postprocess.output.bam,
+        bam_csi=rules.postprocess.output.bam_csi,
         ctg_bed="results/calls/{barcode}/{barcode}_{contig}_ctgs.bed",
         fasta=rules.indexing.output.fasta,
         fasta_fai=rules.indexing.output.fasta_fai,

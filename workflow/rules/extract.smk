@@ -1,8 +1,7 @@
 rule gembs_extract:
     input:
-        indexes_singal="results/indexes/.continue",
-        mapping_signal="results/mapping/{barcode}/.continue",
-        calls_signal="results/calls/{barcode}/.continue",
+        indexes_singal=rules.gem_indexer.output.signal,
+        mapping_signal=rules.postprocess.output.signal,
         bcf="results/calls/{barcode}/{barcode}.bcf",
         bcf_csi="results/calls/{barcode}/{barcode}.bcf.csi",
         chromsizes=rules.indexing.output.chromsizes,
@@ -92,7 +91,6 @@ rule extract_signal:
 
 rule get_methylc:
     input:
-        signal="results/mapping/{barcode}/.continue",
         chh_bed_gz="results/extract/{barcode}/{barcode}_chh.bed.gz",
         chg_bed_gz="results/extract/{barcode}/{barcode}_chg.bed.gz",
         cpg_bed_gz="results/extract/{barcode}/{barcode}_cpg.bed.gz",
