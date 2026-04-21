@@ -10,6 +10,8 @@ results*/
 .snakemake
 resources/
 notebooks/
+layout.txt
+pipeline.txt
 old_pipeline/
 workflow/rules/envs/
 workflow/rules/indexing_2.smk
